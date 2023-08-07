@@ -1,4 +1,6 @@
 using MagicVilla_CouponAPI.Data;
+using MagicVilla_CouponAPI.Models;
+using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,11 +21,37 @@ if (app.Environment.IsDevelopment())
 app.MapGet("/api/coupon", () =>
 {
     return Results.Ok(CouponStore.couponList);
-});
+}).WithName("GetCoupon");
 
 app.MapGet("/api/coupon/{id:int}", (int id) =>
 {
     return Results.Ok(CouponStore.couponList.FirstOrDefault(u=>u.Id==id));
+}).WithName("GetCoupon");
+
+app.MapPost("/api/coupon", ([FromBody] Coupon coupon) =>
+{
+    if (coupon.Id != 0 || string.IsNullOrEmpty(coupon.Name))
+    {
+        return Results.BadRequest("Invalid Id or Coupon Name");
+    }
+    if (CouponStore.couponList.FirstOrDefault(u => u.Name.ToLower() == coupon.Name.ToLower()) != null)
+    {
+        return Results.BadRequest("Coupon Name already exists!!");
+    }
+    coupon.Id = CouponStore.couponList.OrderByDescending(u => u.Id).FirstOrDefault().Id + 1;
+    CouponStore.couponList.Add(coupon);
+    return Results.CreatedAtRoute("GetCoupon", new { id = coupon.Id }, coupon);
+    //return Results.Created($"/api/coupon{coupon.Id}",coupon);
+;}).WithName("CreateCoupon");
+
+app.MapPut("/api/coupon", () =>
+{
+
+});
+
+app.MapDelete("/api/coupon{id:int}", (int id) =>
+{
+
 });
 
 
